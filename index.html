@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GADS (Automated Response Form) — Raw Scoring</title>
+  <style>
+    :root { --bg:#0b0d10; --card:#12161c; --muted:#8ea0b2; --text:#e9eef5; --line:#223042; --accent:#6aa9ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text); }
+    header { padding: 24px 16px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #0f131a, #0b0d10); }
+    h1 { margin:0 0 6px; font-size: 18px; font-weight: 650; }
+    p { margin: 0; color: var(--muted); line-height: 1.35; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; grid-template-columns: 1.25fr .75fr; }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+    .card h2 { margin: 0 0 10px; font-size: 15px; }
+    .row { display: grid; gap: 10px; grid-template-columns: repeat(12, 1fr); }
+    .field { grid-column: span 6; display:flex; flex-direction: column; gap: 6px; }
+    .field.sm { grid-column: span 3; }
+    .field.xs { grid-column: span 2; }
+    label { font-size: 12px; color: var(--muted); }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%; padding: 10px 10px; border-radius: 10px;
+      border: 1px solid #2a3a50; background:#0d1117; color:var(--text);
+      outline: none;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    details { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #10151c; }
+    summary { cursor:pointer; padding: 12px 12px; font-weight: 650; list-style: none; display:flex; align-items:center; justify-content:space-between; }
+    summary::-webkit-details-marker { display:none; }
+    summary span { color: var(--muted); font-weight: 550; font-size: 12px; }
+    .content { padding: 12px; border-top: 1px solid var(--line); }
+    .scaleHelp { color: var(--muted); font-size: 12px; line-height: 1.4; margin-bottom: 10px; }
+    .item { display:grid; grid-template-columns: 1fr auto; gap: 10px; padding: 10px; border: 1px solid #1f2b3b; border-radius: 12px; background:#0c1016; margin-bottom: 10px; }
+    .item strong { font-size: 13px; }
+    .radios { display:flex; gap: 8px; align-items:center; }
+    .pill {
+      display:inline-flex; align-items:center; gap:6px; padding: 6px 8px; border-radius: 999px;
+      border: 1px solid #223042; background:#0b0f15; color: var(--muted); font-size: 12px;
+    }
+    .btns { display:flex; flex-wrap: wrap; gap: 10px; }
+    button {
+      padding: 10px 12px; border-radius: 12px; border: 1px solid #2a3a50; background:#0d1117; color:var(--text);
+      cursor:pointer; font-weight: 650;
+    }
+    button.primary { border-color: #2d5aa3; background: rgba(106,169,255,.14); }
+    button.danger { border-color: #7a2e2e; background: rgba(255,90,90,.10); }
+    button:active { transform: translateY(1px); }
+    .scoreGrid { display:grid; gap: 10px; grid-template-columns: 1fr; }
+    .scoreBox { border: 1px solid #223042; border-radius: 12px; padding: 10px; background:#0c1016; }
+    .scoreBox h3 { margin:0 0 8px; font-size: 13px; }
+    .scoreLine { display:flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12px; }
+    .scoreLine b { color: var(--text); font-weight: 700; }
+    .footerNote { color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>GADS — Automated Response Form (Raw Scoring)</h1>
+  <p>Captures responses + computes raw subscale totals for Section V. (Norm-based conversions require tables not present in the booklet.)</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Section I — Identifying Information</h2>
+    <div class="row">
+      <div class="field"><label>Name</label><input id="name" type="text" /></div>
+      <div class="field sm"><label>Sex</label>
+        <select id="sex"><option value="">—</option><option>Male</option><option>Female</option><option>Other</option></select>
+      </div>
+      <div class="field sm"><label>Subject Age</label><input id="age" type="text" /></div>
+      <div class="field"><label>Address</label><input id="address" type="text" /></div>
+      <div class="field"><label>Parents/Guardians</label><input id="guardians" type="text" /></div>
+      <div class="field"><label>School</label><input id="school" type="text" /></div>
+      <div class="field"><label>Examiner Name</label><input id="examiner" type="text" /></div>
+      <div class="field"><label>Examiner Title</label><input id="examinerTitle" type="text" /></div>
+      <div class="field"><label>Rater Name</label><input id="rater" type="text" /></div>
+      <div class="field sm"><label>Date of Rating</label><input id="ratingDate" type="text" placeholder="YYYY-MM-DD" /></div>
+      <div class="field sm"><label>DOB</label><input id="dob" type="text" placeholder="YYYY-MM-DD" /></div>
+    </div>
+
+    <details open>
+      <summary>Section V — Response Form (0–3 Frequency Ratings) <span id="secVsum"></span></summary>
+      <div class="content">
+        <div class="scaleHelp">
+          Rating guide: <span class="pill">0 = never observed</span>
+          <span class="pill">1 = seldom</span>
+          <span class="pill">2 = sometimes</span>
+          <span class="pill">3 = frequently</span>
+        </div>
+
+        <div id="secV"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Section VI — Parent Interview (Yes/No) <span id="secVIsum"></span></summary>
+      <div class="content">
+        <div id="secVI"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Section VII — Key Questions (Free Text) <span id="secVIIsum"></span></summary>
+      <div class="content">
+        <div id="secVII"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Section VIII — Interpretation & Recommendations <span id="secVIIIsum"></span></summary>
+      <div class="content">
+        <label for="interp">Notes</label>
+        <textarea id="interp" placeholder="Write interpretation and recommendations..."></textarea>
+      </div>
+    </details>
+
+    <div class="btns" style="margin-top:12px;">
+      <button class="primary" id="btnSave">Save</button>
+      <button id="btnExport">Export JSON</button>
+      <button id="btnPrint">Print</button>
+      <button class="danger" id="btnClear">Clear All</button>
+    </div>
+
+    <p class="footerNote" style="margin-top:10px;">
+      This digitizes the response booklet for convenience. It does not provide diagnosis by itself and does not include norm-based conversions (standard scores/quotients).
+    </p>
+  </section>
+
+  <aside class="card">
+    <h2>Live Scoring Summary</h2>
+    <div class="scoreGrid" id="scoreGrid"></div>
+
+    <div class="card" style="margin-top:12px; padding:12px;">
+      <h2 style="margin:0 0 8px;">Data (debug)</h2>
+      <div class="mono" id="debug"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+  // --- Model ---------------------------------------------------------------
+  const SEC_V = [
+    {
+      key: "social",
+      title: "Social Interaction",
+      items: [
+        { id: 1, t: "Inattentive to social/environment cues" },
+        { id: 2, t: "Difficulty cooperating in a group" },
+        { id: 3, t: "Difficulty playing with peers" },
+        { id: 4, t: "Unaware of common social rules/conventions" },
+        { id: 5, t: "Limited empathy for others' feelings" },
+        { id: 6, t: "Needs excessive reassurance when change/problems occur" },
+        { id: 7, t: "Emotion expression lacks nuance (over/under-reacts)" },
+        { id: 8, t: "Needs very specific instructions to start tasks" },
+        { id: 9, t: "Shows frustration/anger inappropriately" },
+        { id:10, t: "Gets frustrated quickly when requirements are unclear" },
+      ]
+    },
+    {
+      key: "restricted",
+      title: "Restricted Patterns of Behavior",
+      items: [
+        { id:11, t: "Looks unhappy/unexcited when praised or entertained" },
+        { id:12, t: "Insensitive to others' needs" },
+        { id:13, t: "Eccentric/unusual behavior" },
+        { id:14, t: "Intense preoccupation with specific subjects/objects" },
+        { id:15, t: "Needs extensive direction from others" },
+        { id:16, t: "Shows empathy in an odd/inappropriate way" },
+        { id:17, t: "Clumsy/uncoordinated large-motor movements" },
+        { id:18, t: "Unusual/uncoordinated movement when walking/running" },
+      ]
+    },
+    {
+      key: "cognitive",
+      title: "Cognitive Patterns",
+      items: [
+        { id:19, t: "Talks about one topic excessively" },
+        { id:20, t: "Appears unusually skilled/knowledgeable in specific areas" },
+        { id:21, t: "Very precise/pedantic speech" },
+        { id:22, t: "Interprets words very literally/concretely" },
+        { id:23, t: "Difficulty understanding jokes/humor" },
+        { id:24, t: "Excellent memory" },
+        { id:25, t: "Intense/obsessive interest in intellectual topics" },
+      ]
+    },
+    {
+      key: "pragmatic",
+      title: "Pragmatic Skills",
+      items: [
+        { id:26, t: "Difficulty understanding slang" },
+        { id:27, t: "Difficulty recognizing teasing" },
+        { id:28, t: "Difficulty recognizing ridicule/being made fun of" },
+        { id:29, t: "Difficulty understanding why others may dislike them" },
+        { id:30, t: "Poor prediction of likely outcomes in social situations" },
+        { id:31, t: "Difficulty with pretend/make-believe play" },
+        { id:32, t: "When confused, avoids clarifying and shifts to familiar topic" },
+      ]
+    }
+  ];
+
+  const SEC_VI = [
+    { id: 33, t: "Any diagnosed developmental delays?" },
+
+    { id: "34a", group:"Language", t:"Single words by ~age 2?" },
+    { id: "34b", group:"Language", t:"Communicative phrases by ~age 3?" },
+    { id: "34c", group:"Language", t:"Receptive vocabulary appropriate for age?" },
+    { id: "34d", group:"Language", t:"Expressive vocabulary appropriate for age?" },
+    { id: "34e", group:"Language", t:"Hearing appears normal?" },
+
+    { id: "35a", group:"Cognitive", t:"Average memory skills?" },
+    { id: "35b", group:"Cognitive", t:"Learns facts/skills like peers?" },
+    { id: "35c", group:"Cognitive", t:"Thinks/problem-solves like peers?" },
+    { id: "35d", group:"Cognitive", t:"Makes generalizations like peers?" },
+    { id: "35e", group:"Cognitive", t:"Tries to solve puzzles/figure out tasks?" },
+
+    { id: "36a", group:"Self-help", t:"Dresses appropriately for age?" },
+    { id: "36b", group:"Self-help", t:"Feeds self appropriately for age?" },
+    { id: "36c", group:"Self-help", t:"Brushes teeth independently?" },
+    { id: "36d", group:"Self-help", t:"Washes/cleans self independently?" },
+    { id: "36e", group:"Self-help", t:"Toileting skills appropriate for age?" },
+
+    { id: "37a", group:"Adaptive", t:"Average motor skills for age?" },
+    { id: "37b", group:"Adaptive", t:"Typical leisure activities for age/gender?" },
+    { id: "37c", group:"Adaptive", t:"Moves around community as independently as peers?" },
+    { id: "37d", group:"Adaptive", t:"Knows phone number and address?" },
+    { id: "37e", group:"Adaptive", t:"Takes responsibility for chores/putting things away?" },
+
+    { id: "38a", group:"Curiosity", t:"Curious about environment (asks 'why')?" },
+    { id: "38b", group:"Curiosity", t:"Reads to gain information?" },
+    { id: "38c", group:"Curiosity", t:"Reads for leisure?" },
+    { id: "38d", group:"Curiosity", t:"Tries to figure out how things work?" },
+    { id: "38e", group:"Curiosity", t:"Asks questions to learn new facts (what/when/where/how)?" },
+  ];
+
+  const SEC_VII = [
+    { id: 1, t: "Which behaviors seem most indicative?" },
+    { id: 2, t: "Do behaviors occur only in certain situations, or across settings?" },
+    { id: 3, t: "Do behaviors appear regardless of who is present?" },
+    { id: 4, t: "Could behaviors be explained by another condition?" },
+    { id: 5, t: "Have evaluations ruled out other conditions (e.g., PDD/other disorders)? If yes, which evaluations?" },
+    { id: 6, t: "Who evaluated the person and what were the results?" },
+    { id: 7, t: "Are problems present in both social interaction and restricted/repetitive patterns?" },
+    { id: 8, t: "Which area is more affected, and what specific problems show up?" },
+    { id: 9, t: "How severe are the problems?" },
+    { id:10, t: "How do the problems interfere with daily functioning?" },
+    { id:11, t: "What additional information needs to be collected?" },
+    { id:12, t: "Who can supply that information?" },
+  ];
+
+  const defaultState = () => ({
+    meta: { name:"", sex:"", age:"", address:"", guardians:"", school:"", examiner:"", examinerTitle:"", rater:"", ratingDate:"", dob:"" },
+    secV: Object.fromEntries(SEC_V.flatMap(s => s.items.map(it => [String(it.id), null]))),
+    secVI: Object.fromEntries(SEC_VI.map(q => [String(q.id), null])),
+    secVII: Object.fromEntries(SEC_VII.map(q => [String(q.id), ""])),
+    interp: ""
+  });
+
+  let state = defaultState();
+
+  // --- Persistence ---------------------------------------------------------
+  const KEY = "gads_automated_v1";
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") state = parsed;
+    } catch {}
+  }
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
+
+  // --- Rendering -----------------------------------------------------------
+  const $ = (id) => document.getElementById(id);
+
+  function renderSectionV() {
+    const root = $("secV");
+    root.innerHTML = "";
+    for (const sub of SEC_V) {
+      const wrap = document.createElement("div");
+      wrap.style.marginBottom = "12px";
+      const h = document.createElement("div");
+      h.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0 10px;">
+        <strong style="font-size:14px;">${sub.title}</strong>
+        <span class="pill">Raw total: <b id="raw_${sub.key}">0</b></span>
+      </div>`;
+      wrap.appendChild(h);
+
+      for (const it of sub.items) {
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div>
+            <strong>${it.id}.</strong> ${escapeHtml(it.t)}
+          </div>
+          <div class="radios" role="radiogroup" aria-label="Item ${it.id}">
+            ${[0,1,2,3].map(v => `
+              <label class="pill" style="cursor:pointer;">
+                <input type="radio" name="v_${it.id}" value="${v}" style="accent-color: var(--accent);" />
+                ${v}
+              </label>
+            `).join("")}
+          </div>
+        `;
+        wrap.appendChild(row);
+
+        // set selection + handler
+        const chosen = state.secV[String(it.id)];
+        row.querySelectorAll(`input[name="v_${it.id}"]`).forEach(inp => {
+          inp.checked = (chosen === Number(inp.value));
+          inp.addEventListener("change", () => {
+            state.secV[String(it.id)] = Number(inp.value);
+            update();
+          });
+        });
+      }
+      root.appendChild(wrap);
+    }
+  }
+
+  function renderSectionVI() {
+    const root = $("secVI");
+    root.innerHTML = "";
+    let currentGroup = "";
+    for (const q of SEC_VI) {
+      if (q.group && q.group !== currentGroup) {
+        currentGroup = q.group;
+        const g = document.createElement("div");
+        g.style.margin = "10px 0 6px";
+        g.innerHTML = `<strong style="font-size:13px;">${escapeHtml(currentGroup)} Development</strong>`;
+        root.appendChild(g);
+      }
+      const row = document.createElement("div");
+      row.className = "item";
+      const label = (typeof q.id === "number") ? `${q.id}.` : "";
+      row.innerHTML = `
+        <div><strong>${label}</strong> ${escapeHtml(q.t)}</div>
+        <div class="radios">
+          ${["Yes","No"].map(v => `
+            <label class="pill" style="cursor:pointer;">
+              <input type="radio" name="vi_${q.id}" value="${v}" style="accent-color: var(--accent);" />
+              ${v}
+            </label>
+          `).join("")}
+        </div>
+      `;
+      root.appendChild(row);
+
+      const chosen = state.secVI[String(q.id)];
+      row.querySelectorAll(`input[name="vi_${q.id}"]`).forEach(inp => {
+        inp.checked = (chosen === inp.value);
+        inp.addEventListener("change", () => {
+          state.secVI[String(q.id)] = inp.value;
+          update();
+        });
+      });
+    }
+  }
+
+  function renderSectionVII() {
+    const root = $("secVII");
+    root.innerHTML = "";
+    for (const q of SEC_VII) {
+      const box = document.createElement("div");
+      box.style.marginBottom = "10px";
+      box.innerHTML = `
+        <label for="vii_${q.id}"><strong>${q.id}.</strong> ${escapeHtml(q.t)}</label>
+        <textarea id="vii_${q.id}" placeholder="Type response..."></textarea>
+      `;
+      root.appendChild(box);
+      const ta = box.querySelector("textarea");
+      ta.value = state.secVII[String(q.id)] || "";
+      ta.addEventListener("input", () => {
+        state.secVII[String(q.id)] = ta.value;
+        update(false);
+      });
+    }
+  }
+
+  function bindMeta() {
+    const map = [
+      ["name","name"], ["sex","sex"], ["age","age"], ["address","address"], ["guardians","guardians"],
+      ["school","school"], ["examiner","examiner"], ["examinerTitle","examinerTitle"],
+      ["rater","rater"], ["ratingDate","ratingDate"], ["dob","dob"]
+    ];
+    for (const [id,key] of map) {
+      const el = $(id);
+      el.value = state.meta[key] || "";
+      el.addEventListener("input", () => { state.meta[key] = el.value; update(false); });
+      el.addEventListener("change", () => { state.meta[key] = el.value; update(false); });
+    }
+    $("interp").value = state.interp || "";
+    $("interp").addEventListener("input", () => { state.interp = $("interp").value; update(false); });
+  }
+
+  // --- Scoring -------------------------------------------------------------
+  function scoreSubscale(sub) {
+    const vals = sub.items.map(it => state.secV[String(it.id)]);
+    const counts = {0:0,1:0,2:0,3:0, blank:0};
+    let sum = 0;
+    for (const v of vals) {
+      if (v === null || v === undefined) { counts.blank++; continue; }
+      counts[v] = (counts[v]||0) + 1;
+      sum += v;
+    }
+    return { sum, counts, answered: vals.length - counts.blank, total: vals.length };
+  }
+
+  function computeAll() {
+    const by = {};
+    let totalSum = 0;
+    let answered = 0;
+    let totalItems = 0;
+
+    for (const sub of SEC_V) {
+      const s = scoreSubscale(sub);
+      by[sub.key] = s;
+      totalSum += s.sum;
+      answered += s.answered;
+      totalItems += s.total;
+    }
+    return { by, totalSum, answered, totalItems };
+  }
+
+  function renderScores() {
+    const { by, totalSum, answered, totalItems } = computeAll();
+
+    // header chips
+    $("secVsum").textContent = `${answered}/${totalItems} rated • Total raw sum ${totalSum}`;
+    const viAnswered = Object.values(state.secVI).filter(v => v === "Yes" || v === "No").length;
+    $("secVIsum").textContent = `${viAnswered}/${SEC_VI.length} answered`;
+    const viiFilled = Object.values(state.secVII).filter(v => (v||"").trim().length > 0).length;
+    $("secVIIsum").textContent = `${viiFilled}/${SEC_VII.length} filled`;
+    $("secVIIIsum").textContent = (state.interp || "").trim().length ? "filled" : "blank";
+
+    // per-subscale raw
+    for (const sub of SEC_V) {
+      const el = document.querySelector(`#raw_${sub.key}`);
+      if (el) el.textContent = by[sub.key].sum;
+    }
+
+    // sidebar
+    const grid = $("scoreGrid");
+    grid.innerHTML = "";
+    for (const sub of SEC_V) {
+      const s = by[sub.key];
+      const box = document.createElement("div");
+      box.className = "scoreBox";
+      box.innerHTML = `
+        <h3>${escapeHtml(sub.title)}</h3>
+        <div class="scoreLine"><span>Raw sum</span><b>${s.sum}</b></div>
+        <div class="scoreLine"><span>Rated</span><b>${s.answered}/${s.total}</b></div>
+        <div class="scoreLine"><span>Counts (0/1/2/3)</span><b>${s.counts[0]}/${s.counts[1]}/${s.counts[2]}/${s.counts[3]}</b></div>
+        <div class="scoreLine"><span>Blank</span><b>${s.counts.blank}</b></div>
+      `;
+      grid.appendChild(box);
+    }
+    const total = document.createElement("div");
+    total.className = "scoreBox";
+    total.innerHTML = `
+      <h3>Section V Total</h3>
+      <div class="scoreLine"><span>Total raw sum</span><b>${totalSum}</b></div>
+      <div class="scoreLine"><span>Completion</span><b>${answered}/${totalItems}</b></div>
+      <div class="footerNote" style="margin-top:8px;">
+        Note: Standard score / quotient conversion requires norm tables (not included here).
+      </div>
+    `;
+    grid.appendChild(total);
+
+    $("debug").textContent = JSON.stringify({ scores: { totalSum, answered, totalItems }, meta: state.meta }, null, 2);
+  }
+
+  function update(doSave=true) {
+    renderScores();
+    if (doSave) save();
+  }
+
+  // --- Utilities -----------------------------------------------------------
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function download(filename, text) {
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // --- Boot ---------------------------------------------------------------
+  load();
+  renderSectionV();
+  renderSectionVI();
+  renderSectionVII();
+  bindMeta();
+  renderScores();
+
+  $("btnSave").addEventListener("click", () => { save(); alert("Saved."); });
+  $("btnExport").addEventListener("click", () => {
+    const payload = { ...state, exportedAt: new Date().toISOString() };
+    download("gads_responses.json", JSON.stringify(payload, null, 2));
+  });
+  $("btnPrint").addEventListener("click", () => window.print());
+  $("btnClear").addEventListener("click", () => {
+    if (!confirm("Clear all saved data for this form on this browser?")) return;
+    state = defaultState();
+    save();
+    location.reload();
+  });
+</script>
+</body>
+</html>
